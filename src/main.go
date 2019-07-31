@@ -7,90 +7,115 @@ import (
 	"strings"
 )
 
-// FormatLog Format the log message
-func FormatLog(level string, message string, metadata interface {}) string {
-	typeOfMetadata := reflect.TypeOf(metadata)
-	valueOfMetadata := reflect.ValueOf(metadata)
+// Fields Log fields
+type Fields map[string]interface{}
 
-	formattedMetadata := make([]string, typeOfMetadata.NumField() + 1)
+// Entry Log entry
+type Entry interface {
+	WithFields(fields Fields) Entry
+	Debug(message string)
+	Info(message string)
+	Warn(message string)
+	Error(message string)
+	Fatal(message string)
+	WriteLog(level string, message string)
+}
+
+// LogEntry Log entry
+type LogEntry struct {
+	fields Fields
+}
+
+// NewLogEntry Create a new log entry
+func NewLogEntry() Entry {
+	return LogEntry{}
+}
+
+// WithFields Create a new entry with provided fields
+func WithFields(fields Fields) Entry {
+	return LogEntry{
+		fields,
+	}
+}
+
+// WithFields Add fields to the entry
+func (entry LogEntry) WithFields(fields Fields) Entry {
+	// TODO : Concat
+	return LogEntry{
+		fields,
+	}
+}
+
+// Debug Log a debug message
+func (entry LogEntry) Debug(message string) {
+	entry.WriteLog("debug", message)
+}
+
+// Info Log an info message
+func (entry LogEntry) Info(message string) {
+	entry.WriteLog("info", message)
+}
+
+// Warn Log a warning message
+func (entry LogEntry) Warn(message string) {
+	entry.WriteLog("warn", message)
+}
+
+// Error Log an error message
+func (entry LogEntry) Error(message string) {
+	entry.WriteLog("error", message)
+}
+
+// Fatal Log a fatal message
+func (entry LogEntry) Fatal(message string) {
+	entry.WriteLog("fatal", message)
+}
+
+func (entry LogEntry) formatLog(level string, message string) string {
+	formattedMetadata := make([]string, len(entry.fields) + 2)
+	index := 2
 
 	formattedMetadata[0] = fmt.Sprintf("level=%v", level)
-	for i := 0; i < typeOfMetadata.NumField(); i++ {
-		field := typeOfMetadata.Field(i)
-		value := fmt.Sprint(valueOfMetadata.Field(i))
-
-		if (field.Type.String() == "string") {
-			value = fmt.Sprintf("\"%v\"", value)
+	formattedMetadata[1] = fmt.Sprintf("message=%v", message)
+	for key, value := range entry.fields {
+		if reflect.TypeOf(value).String() == "string" {
+			formattedMetadata[index] = fmt.Sprintf("%v=\"%v\"", key, value)
+		} else {
+			formattedMetadata[index] = fmt.Sprintf("%v=%v", key, value)
 		}
-
-		formattedMetadata[i + 1] = fmt.Sprintf("%v=%v", field.Name, value)
+		index++
 	}
 
-	return fmt.Sprintf("%v -- %v", message, strings.Join(formattedMetadata, " "))
+	return strings.Join(formattedMetadata, " ") 
+}
+
+// WriteLog Write the log
+func (entry LogEntry) WriteLog(level string, message string) {
+	// TODO : Plusieurs sorties ? Avec un format texte avec couleur pour le terminal et un json ?
+	log.Println(entry.formatLog(level, message))
 }
 
 // Debug Log a debug message
 func Debug(message string) {
-	var metadata struct{}
-	DebugWithMetadata(message, metadata)
-}
-
-// DebugWithMetadata Log a debug message with metadata
-func DebugWithMetadata(message string, metadata interface {}) {
-	log.Println(
-		FormatLog("debug", message, metadata),
-	)
+	NewLogEntry().Debug(message)
 }
 
 // Info Log an info message
 func Info(message string) {
-	var metadata struct{}
-	InfoWithMetadata(message, metadata)
-}
-
-// InfoWithMetadata Log a info message with metadata
-func InfoWithMetadata(message string, metadata interface {}) {
-	log.Println(
-		FormatLog("info", message, metadata),
-	)
+	NewLogEntry().Info(message)
 }
 
 // Warn Log a warning message
 func Warn(message string) {
-	var metadata struct{}
-	WarnWithMetadata(message, metadata)
-}
-
-// WarnWithMetadata Log a warn message with metadata
-func WarnWithMetadata(message string, metadata interface {}) {
-	log.Println(
-		FormatLog("warn", message, metadata),
-	)
+	NewLogEntry().Warn(message)
 }
 
 // Error Log an error message
 func Error(message string) {
-	var metadata struct{}
-	ErrorWithMetadata(message, metadata)
-}
-
-// ErrorWithMetadata Log a error message with metadata
-func ErrorWithMetadata(message string, metadata interface {}) {
-	log.Println(
-		FormatLog("error", message, metadata),
-	)
+	NewLogEntry().Error(message)
 }
 
 // Fatal Log a fatal message
 func Fatal(message string) {
-	var metadata struct{}
-	FatalWithMetadata(message, metadata)
-	log.Println("level=fatal")
-}
-
-// FatalWithMetadata Log a fatal message with metadata
-func FatalWithMetadata(message string, metadata interface {}) {
-	log.Println(
-		FormatLog("fatal", message, metadata),
-	)
+	NewLogEntry().Fatal(message)
 }

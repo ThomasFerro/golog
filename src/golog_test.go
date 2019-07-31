@@ -1,6 +1,7 @@
 package main_test
 
 import (
+	"fmt"
 	"log"
 	"strings"
 	"testing"
@@ -12,13 +13,16 @@ import (
 - [x] Afficher le niveau de log
 - [x] Afficher les métadonnées
 - [x] Afficher le message de log (fait parti des métadonnées ?)
-- [ ] Afficher les métadonnées imbriquées ?
+- [ ] Afficher les métadonnées imbriquées
+- [ ] Afficher les métadonnées multilignes ?
+QOL:
 - [ ] Afficher les logs debug en bleu par défaut
 - [ ] Afficher les logs info en vert par défaut
 - [ ] Afficher les logs warn en jaune/orange par défaut
 - [ ] Afficher les logs error en rouge par défaut
 - [ ] Afficher les logs fatal en rouge par défaut
 - [ ] Permettre de surcharger les couleurs par défaut
+- [ ] Appel os.Exit et panic
 */
 type DumbWriter struct { 
 	messages []string;
@@ -31,6 +35,7 @@ func (d *DumbWriter) Write(p []byte) (int, error) {
 
 func (d DumbWriter) LastLogContains(message string) bool {
 	lastLog := d.messages[len(d.messages) - 1]
+	fmt.Println(lastLog)
 	return strings.Contains(lastLog, message)
 }
 
@@ -96,14 +101,61 @@ func TestShouldDisplayTheFatalLogLevel(t *testing.T) {
 	}
 }
 
-func fakeMetadata() interface{} {
-	var metadata struct{
-		test string
-		otherData float32
+func TestShouldDisplayTheDebugLogMessage(t *testing.T) {
+	dumbWriter := NewDumbWriterAsLogOutput()
+
+	golog.Debug("Test")
+
+	if !dumbWriter.LastLogContains("message=Test") {
+		t.Errorf("The log message is not written")
 	}
-	metadata.test = "oui"
-	metadata.otherData = 42.42
-	return metadata
+}
+
+func TestShouldDisplayTheInfoLogMessage(t *testing.T) {
+	dumbWriter := NewDumbWriterAsLogOutput()
+
+	golog.Info("Test")
+
+	if !dumbWriter.LastLogContains("message=Test") {
+		t.Errorf("The log message is not written")
+	}
+}
+
+func TestShouldDisplayTheWarnLogMessage(t *testing.T) {
+	dumbWriter := NewDumbWriterAsLogOutput()
+
+	golog.Warn("Test")
+
+	if !dumbWriter.LastLogContains("message=Test") {
+		t.Errorf("The log message is not written")
+	}
+}
+
+func TestShouldDisplayTheErrorLogMessage(t *testing.T) {
+	dumbWriter := NewDumbWriterAsLogOutput()
+
+	golog.Error("Test")
+
+	if !dumbWriter.LastLogContains("message=Test") {
+		t.Errorf("The log message is not written")
+	}
+}
+
+func TestShouldDisplayTheFatalLogMessage(t *testing.T) {
+	dumbWriter := NewDumbWriterAsLogOutput()
+
+	golog.Error("Test")
+
+	if !dumbWriter.LastLogContains("message=Test") {
+		t.Errorf("The log message is not written")
+	}
+}
+
+func fakeMetadata() golog.Fields {
+	return golog.Fields{
+		"test": "oui",
+		"otherData": 42.42,
+	}
 }
 
 func checkIfFakeMetadataAreLogged(t *testing.T, dumbWriter *DumbWriter, level string) {
@@ -115,9 +167,7 @@ func checkIfFakeMetadataAreLogged(t *testing.T, dumbWriter *DumbWriter, level st
 func TestShouldDisplayTheDebugMetadata(t *testing.T) {
 	dumbWriter := NewDumbWriterAsLogOutput()
 
-	metadata := fakeMetadata()
-
-	golog.DebugWithMetadata("Test", metadata)
+	golog.WithFields(fakeMetadata()).Debug("Test")
 
 	checkIfFakeMetadataAreLogged(t, dumbWriter, "debug")
 }
@@ -125,9 +175,7 @@ func TestShouldDisplayTheDebugMetadata(t *testing.T) {
 func TestShouldDisplayTheInfoMetadata(t *testing.T) {
 	dumbWriter := NewDumbWriterAsLogOutput()
 
-	metadata := fakeMetadata()
-
-	golog.InfoWithMetadata("Test", metadata)
+	golog.WithFields(fakeMetadata()).Info("Test")
 
 	checkIfFakeMetadataAreLogged(t, dumbWriter, "info")
 }
@@ -135,9 +183,7 @@ func TestShouldDisplayTheInfoMetadata(t *testing.T) {
 func TestShouldDisplayTheWarnMetadata(t *testing.T) {
 	dumbWriter := NewDumbWriterAsLogOutput()
 
-	metadata := fakeMetadata()
-
-	golog.WarnWithMetadata("Test", metadata)
+	golog.WithFields(fakeMetadata()).Warn("Test")
 
 	checkIfFakeMetadataAreLogged(t, dumbWriter, "warn")
 }
@@ -145,9 +191,7 @@ func TestShouldDisplayTheWarnMetadata(t *testing.T) {
 func TestShouldDisplayTheErrorMetadata(t *testing.T) {
 	dumbWriter := NewDumbWriterAsLogOutput()
 
-	metadata := fakeMetadata()
-
-	golog.ErrorWithMetadata("Test", metadata)
+	golog.WithFields(fakeMetadata()).Error("Test")
 
 	checkIfFakeMetadataAreLogged(t, dumbWriter, "error")
 }
@@ -155,73 +199,21 @@ func TestShouldDisplayTheErrorMetadata(t *testing.T) {
 func TestShouldDisplayTheFatalMetadata(t *testing.T) {
 	dumbWriter := NewDumbWriterAsLogOutput()
 
-	metadata := fakeMetadata()
-
-	golog.FatalWithMetadata("Test", metadata)
+	golog.WithFields(fakeMetadata()).Fatal("Test")
 
 	checkIfFakeMetadataAreLogged(t, dumbWriter, "fatal")
 }
 
-func TestShouldDisplayAStringMetadataQuoted(t *testing.T) {
-	dumbWriter := NewDumbWriterAsLogOutput()
-	var metadata struct{
-		test string
-	}
-	metadata.test = "a metadata"
+// func TestShouldDisplayAStringMetadataQuoted(t *testing.T) {
+// 	dumbWriter := NewDumbWriterAsLogOutput()
+// 	var metadata struct{
+// 		test string
+// 	}
+// 	metadata.test = "a metadata"
 
-	golog.DebugWithMetadata("Test", metadata)
+// 	golog.DebugWithMetadata("Test", metadata)
 
-	if !dumbWriter.LastLogContains("test=\"a metadata\"") {
-		t.Errorf("The log is not written with the quoted string metadata")
-	}
-}
-
-func TestShouldDisplayTheDebugLogMessage(t *testing.T) {
-	dumbWriter := NewDumbWriterAsLogOutput()
-
-	golog.Debug("Test")
-
-	if !dumbWriter.LastLogContains("Test --") {
-		t.Errorf("The log message is not written")
-	}
-}
-
-func TestShouldDisplayTheInfoLogMessage(t *testing.T) {
-	dumbWriter := NewDumbWriterAsLogOutput()
-
-	golog.Info("Test")
-
-	if !dumbWriter.LastLogContains("Test --") {
-		t.Errorf("The log message is not written")
-	}
-}
-
-func TestShouldDisplayTheWarnLogMessage(t *testing.T) {
-	dumbWriter := NewDumbWriterAsLogOutput()
-
-	golog.Warn("Test")
-
-	if !dumbWriter.LastLogContains("Test --") {
-		t.Errorf("The log message is not written")
-	}
-}
-
-func TestShouldDisplayTheErrorLogMessage(t *testing.T) {
-	dumbWriter := NewDumbWriterAsLogOutput()
-
-	golog.Error("Test")
-
-	if !dumbWriter.LastLogContains("Test --") {
-		t.Errorf("The log message is not written")
-	}
-}
-
-func TestShouldDisplayTheFatalLogMessage(t *testing.T) {
-	dumbWriter := NewDumbWriterAsLogOutput()
-
-	golog.Error("Test")
-
-	if !dumbWriter.LastLogContains("Test --") {
-		t.Errorf("The log message is not written")
-	}
-}
+// 	if !dumbWriter.LastLogContains("test=\"a metadata\"") {
+// 		t.Errorf("The log is not written with the quoted string metadata")
+// 	}
+// }
