@@ -13,8 +13,10 @@ import (
 - [x] Afficher le niveau de log
 - [x] Afficher les métadonnées
 - [x] Afficher le message de log (fait parti des métadonnées ?)
-- [ ] Afficher les métadonnées imbriquées
-- [ ] Afficher les métadonnées multilignes ?
+- [x] Appel panic sur erreur
+- [ ] Appel os.Exit sur fatal (comment le tester proprement et garder le code coverage ?)
+- [x] Afficher les métadonnées imbriquées
+- [x] Afficher les métadonnées multilignes
 QOL:
 - [ ] Afficher les logs debug en bleu par défaut
 - [ ] Afficher les logs info en vert par défaut
@@ -22,7 +24,6 @@ QOL:
 - [ ] Afficher les logs error en rouge par défaut
 - [ ] Afficher les logs fatal en rouge par défaut
 - [ ] Permettre de surcharger les couleurs par défaut
-- [ ] Appel os.Exit et panic
 */
 type DumbWriter struct { 
 	messages []string;
@@ -82,6 +83,9 @@ func TestShouldDisplayTheWarnLogLevel(t *testing.T) {
 }
 
 func TestShouldDisplayTheErrorLogLevel(t *testing.T) {
+	defer func() {
+		recover()
+	}()
 	dumbWriter := NewDumbWriterAsLogOutput()
 
 	golog.Error("Test")
@@ -132,6 +136,9 @@ func TestShouldDisplayTheWarnLogMessage(t *testing.T) {
 }
 
 func TestShouldDisplayTheErrorLogMessage(t *testing.T) {
+	defer func() {
+		recover()
+	}()
 	dumbWriter := NewDumbWriterAsLogOutput()
 
 	golog.Error("Test")
@@ -144,7 +151,7 @@ func TestShouldDisplayTheErrorLogMessage(t *testing.T) {
 func TestShouldDisplayTheFatalLogMessage(t *testing.T) {
 	dumbWriter := NewDumbWriterAsLogOutput()
 
-	golog.Error("Test")
+	golog.Fatal("Test")
 
 	if !dumbWriter.LastLogContains("message=Test") {
 		t.Errorf("The log message is not written")
@@ -189,6 +196,9 @@ func TestShouldDisplayTheWarnMetadata(t *testing.T) {
 }
 
 func TestShouldDisplayTheErrorMetadata(t *testing.T) {
+	defer func() {
+		recover()
+	}()
 	dumbWriter := NewDumbWriterAsLogOutput()
 
 	golog.WithFields(fakeMetadata()).Error("Test")
@@ -204,16 +214,52 @@ func TestShouldDisplayTheFatalMetadata(t *testing.T) {
 	checkIfFakeMetadataAreLogged(t, dumbWriter, "fatal")
 }
 
-// func TestShouldDisplayAStringMetadataQuoted(t *testing.T) {
-// 	dumbWriter := NewDumbWriterAsLogOutput()
-// 	var metadata struct{
-// 		test string
-// 	}
-// 	metadata.test = "a metadata"
+func TestShouldDisplayAStringMetadataQuoted(t *testing.T) {
+	dumbWriter := NewDumbWriterAsLogOutput()
+	
+	golog.WithFields(golog.Fields{
+		"test": "a metadata",
+	}).Debug("Test")
 
-// 	golog.DebugWithMetadata("Test", metadata)
+	if !dumbWriter.LastLogContains("test=\"a metadata\"") {
+		t.Errorf("The log is not written with the quoted string metadata")
+	}
+}
 
-// 	if !dumbWriter.LastLogContains("test=\"a metadata\"") {
-// 		t.Errorf("The log is not written with the quoted string metadata")
-// 	}
-// }
+func TestShouldDisplayMultilineStringMetadata(t *testing.T) {
+	dumbWriter := NewDumbWriterAsLogOutput()
+	
+	golog.WithFields(golog.Fields{
+		"test": `a test 
+		metadata`,
+	}).Debug("Test")
+
+	if !dumbWriter.LastLogContains(`test="a test 
+		metadata"`) {
+		t.Errorf("The log is not written with the multiline string metadata")
+	}
+}
+
+func TestShouldDisplayChainedMetadata(t *testing.T) {
+	dumbWriter := NewDumbWriterAsLogOutput()
+	
+	golog.WithFields(golog.Fields{
+		"first": "a metadata",
+	}).WithFields(fakeMetadata()).Debug("Test")
+	
+	if !dumbWriter.LastLogContains("test=\"oui\"") ||
+		!dumbWriter.LastLogContains("otherData=42.42") ||
+		!dumbWriter.LastLogContains("first=\"a metadata\"") {
+		t.Errorf("The log is not written with the provided chained metadata %v", dumbWriter.messages[len(dumbWriter.messages) - 1])
+	}
+}
+
+func TestErrorLogShouldPanic(t *testing.T) {
+	defer func() {
+        if r := recover(); r == nil {
+            t.Errorf("The error log did not panic")
+        }
+	}()
+	
+	golog.Error("Test")
+}

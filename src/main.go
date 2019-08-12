@@ -40,10 +40,14 @@ func WithFields(fields Fields) Entry {
 
 // WithFields Add fields to the entry
 func (entry LogEntry) WithFields(fields Fields) Entry {
-	// TODO : Concat
-	return LogEntry{
+	logEntry := LogEntry{
 		fields,
 	}
+	for key, value := range entry.fields {
+		logEntry.fields[key] = value
+	}
+
+	return logEntry
 }
 
 // Debug Log a debug message
@@ -63,11 +67,12 @@ func (entry LogEntry) Warn(message string) {
 
 // Error Log an error message
 func (entry LogEntry) Error(message string) {
-	entry.WriteLog("error", message)
+	log.Panicln(entry.formatLog("error", message))
 }
 
 // Fatal Log a fatal message
 func (entry LogEntry) Fatal(message string) {
+	// TODO : Passer par log.Fatal
 	entry.WriteLog("fatal", message)
 }
 
