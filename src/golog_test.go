@@ -83,16 +83,16 @@ func TestShouldDisplayTheWarnLogLevel(t *testing.T) {
 }
 
 func TestShouldDisplayTheErrorLogLevel(t *testing.T) {
-	defer func() {
-		recover()
-	}()
 	dumbWriter := NewDumbWriterAsLogOutput()
 
-	golog.Error("Test")
+	defer func(dumbWriter *DumbWriter) {
+		recover()
+		if !dumbWriter.LastLogContains("level=error") {
+			t.Error("The log is not written with error level")
+		}
+	}(dumbWriter)
 
-	if !dumbWriter.LastLogContains("level=error") {
-		t.Error("The log is not written with error level")
-	}
+	golog.Error("Test")
 }
 
 func TestShouldDisplayTheFatalLogLevel(t *testing.T) {
@@ -136,16 +136,17 @@ func TestShouldDisplayTheWarnLogMessage(t *testing.T) {
 }
 
 func TestShouldDisplayTheErrorLogMessage(t *testing.T) {
-	defer func() {
-		recover()
-	}()
 	dumbWriter := NewDumbWriterAsLogOutput()
 
-	golog.Error("Test")
+	defer func(dumbWriter *DumbWriter) {
+		recover()
 
-	if !dumbWriter.LastLogContains("message=\"Test\"") {
-		t.Errorf("The log message is not written")
-	}
+		if !dumbWriter.LastLogContains("message=\"Test\"") {
+			t.Errorf("The log message is not written")
+		}
+	}(dumbWriter)
+
+	golog.Error("Test")
 }
 
 func TestShouldDisplayTheFatalLogMessage(t *testing.T) {
@@ -196,14 +197,15 @@ func TestShouldDisplayTheWarnMetadata(t *testing.T) {
 }
 
 func TestShouldDisplayTheErrorMetadata(t *testing.T) {
-	defer func() {
-		recover()
-	}()
 	dumbWriter := NewDumbWriterAsLogOutput()
 
-	golog.WithFields(fakeMetadata()).Error("Test")
+	defer func(dumbWriter *DumbWriter) {
+		recover()
 
-	checkIfFakeMetadataAreLogged(t, dumbWriter, "error")
+		checkIfFakeMetadataAreLogged(t, dumbWriter, "error")
+	}(dumbWriter)
+
+	golog.WithFields(fakeMetadata()).Error("Test")
 }
 
 func TestShouldDisplayTheFatalMetadata(t *testing.T) {
