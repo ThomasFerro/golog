@@ -110,7 +110,7 @@ func TestShouldDisplayTheDebugLogMessage(t *testing.T) {
 
 	golog.Debug("Test")
 
-	if !dumbWriter.LastLogContains("message=Test") {
+	if !dumbWriter.LastLogContains("message=\"Test\"") {
 		t.Errorf("The log message is not written")
 	}
 }
@@ -120,7 +120,7 @@ func TestShouldDisplayTheInfoLogMessage(t *testing.T) {
 
 	golog.Info("Test")
 
-	if !dumbWriter.LastLogContains("message=Test") {
+	if !dumbWriter.LastLogContains("message=\"Test\"") {
 		t.Errorf("The log message is not written")
 	}
 }
@@ -130,7 +130,7 @@ func TestShouldDisplayTheWarnLogMessage(t *testing.T) {
 
 	golog.Warn("Test")
 
-	if !dumbWriter.LastLogContains("message=Test") {
+	if !dumbWriter.LastLogContains("message=\"Test\"") {
 		t.Errorf("The log message is not written")
 	}
 }
@@ -143,7 +143,7 @@ func TestShouldDisplayTheErrorLogMessage(t *testing.T) {
 
 	golog.Error("Test")
 
-	if !dumbWriter.LastLogContains("message=Test") {
+	if !dumbWriter.LastLogContains("message=\"Test\"") {
 		t.Errorf("The log message is not written")
 	}
 }
@@ -153,7 +153,7 @@ func TestShouldDisplayTheFatalLogMessage(t *testing.T) {
 
 	golog.Fatal("Test")
 
-	if !dumbWriter.LastLogContains("message=Test") {
+	if !dumbWriter.LastLogContains("message=\"Test\"") {
 		t.Errorf("The log message is not written")
 	}
 }

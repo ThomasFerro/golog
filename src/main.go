@@ -76,15 +76,19 @@ func (entry LogEntry) Fatal(message string) {
 	entry.WriteLog("fatal", message)
 }
 
+func formatStringMessage(key string, value interface{}) string {
+	return fmt.Sprintf("%v=\"%v\"", key, value)
+}
+
 func (entry LogEntry) formatLog(level string, message string) string {
 	formattedMetadata := make([]string, len(entry.fields) + 2)
 	index := 2
 
 	formattedMetadata[0] = fmt.Sprintf("level=%v", level)
-	formattedMetadata[1] = fmt.Sprintf("message=%v", message)
+	formattedMetadata[1] = formatStringMessage("message", message)
 	for key, value := range entry.fields {
 		if reflect.TypeOf(value).String() == "string" {
-			formattedMetadata[index] = fmt.Sprintf("%v=\"%v\"", key, value)
+			formattedMetadata[index] = formatStringMessage(key, value)
 		} else {
 			formattedMetadata[index] = fmt.Sprintf("%v=%v", key, value)
 		}
