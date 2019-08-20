@@ -1,11 +1,17 @@
 package main
 
 import (
-	"log"
-
 	"github.com/ThomasFerro/golog/entries"
 	"github.com/ThomasFerro/golog/formatters"
+	gologgers "github.com/ThomasFerro/golog/loggers"
 )
+
+var loggers []gologgers.Logger
+
+// SetLoggers Set the loggers to use
+func SetLoggers(newLoggers ...gologgers.Logger) {
+	loggers = newLoggers
+}
 
 // LogEntry Log entry
 type LogEntry struct {
@@ -69,13 +75,13 @@ func (entry LogEntry) Fatal(message string) {
 
 // WriteLog Write the log
 func (entry LogEntry) WriteLog(level string, message string) {
-	// TODO : Loop in the loggers
-	// TODO : Use the configured loggers' formatters
-	formattedMessage := formatters.NewKvpFormatter().Format(entry, level, message)
-	if level == "error" {
-		log.Panicln(formattedMessage)
+	for _, logger := range loggers {
+		logger.Output().Write(
+			[]byte(
+				formatters.NewKvpFormatter().Format(entry, level, message),
+			),
+		)
 	}
-	log.Println(formattedMessage)
 }
 
 // Debug Log a debug message

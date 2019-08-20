@@ -2,12 +2,12 @@ package main_test
 
 import (
 	"fmt"
-	"log"
 	"strings"
 	"testing"
 
 	golog "github.com/ThomasFerro/golog"
 	"github.com/ThomasFerro/golog/entries"
+	"github.com/ThomasFerro/golog/loggers"
 )
 
 /*
@@ -43,7 +43,9 @@ func NewDumbWriter() *DumbWriter {
 
 func NewDumbWriterAsLogOutput() *DumbWriter {
 	dumbWriter := NewDumbWriter()
-	log.SetOutput(dumbWriter)
+	golog.SetLoggers(
+		loggers.NewLogger(dumbWriter),
+	)
 	return dumbWriter
 }
 
@@ -251,29 +253,28 @@ func TestShouldDisplayChainedMetadata(t *testing.T) {
 	}
 }
 
-func TestErrorLogShouldPanic(t *testing.T) {
-	defer func() {
-        if r := recover(); r == nil {
-            t.Errorf("The error log did not panic")
-        }
-	}()
+// FIXME : Is this test still relevent ?
+// func TestErrorLogShouldPanic(t *testing.T) {
+// 	defer func() {
+//         if r := recover(); r == nil {
+//             t.Errorf("The error log did not panic")
+//         }
+// 	}()
 	
-	golog.Error("Test")
-}
-
-// func TestShouldAllowForMultipleConfigurations(t *testing.T) {
-// 	firstOutput := NewDumbWriter()
-// 	secondOutput := NewDumbWriter()
-// 	golog.SetConfigurations(golog.Configuration{
-// 		Output: firstOutput,
-// 	},
-// 	golog.Configuration{
-// 		Output: secondOutput,
-// 	})
-
-// 	golog.Debug("Test")
-
-// 	if len(firstOutput.messages) == 0 || len(secondOutput.messages) == 0 {
-// 		t.Errorf("The log is not written in every output")
-// 	}
+// 	golog.Error("Test")
 // }
+
+func TestShouldAllowForMultipleConfigurations(t *testing.T) {
+	firstOutput := NewDumbWriter()
+	secondOutput := NewDumbWriter()
+	golog.SetLoggers(
+		loggers.NewLogger(firstOutput),
+		loggers.NewLogger(secondOutput),
+	)
+
+	golog.Debug("Test")
+
+	if len(firstOutput.messages) == 0 || len(secondOutput.messages) == 0 {
+		t.Errorf("The log is not written in every output")
+	}
+}
