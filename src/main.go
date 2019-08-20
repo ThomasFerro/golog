@@ -67,7 +67,7 @@ func (entry LogEntry) Warn(message string) {
 
 // Error Log an error message
 func (entry LogEntry) Error(message string) {
-	log.Panicln(entry.formatLog("error", message))
+	entry.WriteLog("error", message)
 }
 
 // Fatal Log a fatal message
@@ -101,7 +101,11 @@ func (entry LogEntry) formatLog(level string, message string) string {
 // WriteLog Write the log
 func (entry LogEntry) WriteLog(level string, message string) {
 	// TODO : Plusieurs sorties ? Avec un format texte avec couleur pour le terminal et un json ?
-	log.Println(entry.formatLog(level, message))
+	formattedMessage := entry.formatLog(level, message)
+	if level == "error" {
+		log.Panicln(formattedMessage)
+	}
+	log.Println(formattedMessage)
 }
 
 // Debug Log a debug message
