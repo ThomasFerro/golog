@@ -6,5 +6,5 @@ import (
 
 // Formatter A log formatter
 type Formatter interface {
-	Format(entry entries.Entry, level string, message string) string
+	Format(fields entries.Fields, level string, message string) string
 }

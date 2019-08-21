@@ -7,19 +7,10 @@ import (
 
 	golog "github.com/ThomasFerro/golog"
 	"github.com/ThomasFerro/golog/entries"
+	"github.com/ThomasFerro/golog/formatters"
 	"github.com/ThomasFerro/golog/loggers"
 )
 
-/*
-- [x] Afficher le niveau de log
-- [x] Afficher les métadonnées
-- [x] Afficher le message de log (fait parti des métadonnées ?)
-- [x] Appel panic sur erreur
-- [ ] Appel os.Exit sur fatal (comment le tester proprement et garder le code coverage ?)
-- [x] Afficher les métadonnées imbriquées
-- [x] Afficher les métadonnées multilignes
-- [ ] Formatters + sorties multiples
-*/
 type DumbWriter struct { 
 	messages []string;
 }
@@ -43,8 +34,9 @@ func NewDumbWriter() *DumbWriter {
 
 func NewDumbWriterAsLogOutput() *DumbWriter {
 	dumbWriter := NewDumbWriter()
+	formatter := formatters.NewKvpFormatter()
 	golog.SetLoggers(
-		loggers.NewLogger(dumbWriter),
+		loggers.NewLogger(dumbWriter, formatter),
 	)
 	return dumbWriter
 }
@@ -213,32 +205,6 @@ func TestShouldDisplayTheFatalMetadata(t *testing.T) {
 	checkIfFakeMetadataAreLogged(t, dumbWriter, "fatal")
 }
 
-func TestShouldDisplayAStringMetadataQuoted(t *testing.T) {
-	dumbWriter := NewDumbWriterAsLogOutput()
-	
-	golog.WithFields(entries.Fields{
-		"test": "a metadata",
-	}).Debug("Test")
-
-	if !dumbWriter.LastLogContains("test", "\"a metadata\"") {
-		t.Errorf("The log is not written with the quoted string metadata")
-	}
-}
-
-func TestShouldDisplayMultilineStringMetadata(t *testing.T) {
-	dumbWriter := NewDumbWriterAsLogOutput()
-	
-	golog.WithFields(entries.Fields{
-		"test": `a test 
-		metadata`,
-	}).Debug("Test")
-
-	if !dumbWriter.LastLogContains("test", `"a test 
-		metadata"`) {
-		t.Errorf("The log is not written with the multiline string metadata")
-	}
-}
-
 func TestShouldDisplayChainedMetadata(t *testing.T) {
 	dumbWriter := NewDumbWriterAsLogOutput()
 	
@@ -253,28 +219,56 @@ func TestShouldDisplayChainedMetadata(t *testing.T) {
 	}
 }
 
-// FIXME : Is this test still relevent ?
-// func TestErrorLogShouldPanic(t *testing.T) {
-// 	defer func() {
-//         if r := recover(); r == nil {
-//             t.Errorf("The error log did not panic")
-//         }
-// 	}()
-	
-// 	golog.Error("Test")
-// }
-
-func TestShouldAllowForMultipleConfigurations(t *testing.T) {
+func TestShouldAllowForMultipleOutputs(t *testing.T) {
 	firstOutput := NewDumbWriter()
 	secondOutput := NewDumbWriter()
+	formatter := formatters.NewKvpFormatter()
 	golog.SetLoggers(
-		loggers.NewLogger(firstOutput),
-		loggers.NewLogger(secondOutput),
+		loggers.NewLogger(firstOutput, formatter),
+		loggers.NewLogger(secondOutput, formatter),
 	)
 
 	golog.Debug("Test")
 
 	if len(firstOutput.messages) == 0 || len(secondOutput.messages) == 0 {
 		t.Errorf("The log is not written in every output")
+	}
+}
+
+const (
+	FIRST_FORMATTER_USED = "FIRST_FORMATTER_USED"
+	SECOND_FORMATTER_USED = "SECOND_FORMATTER_USED"
+)
+
+type FirstFormatter struct {}
+
+func (formatter FirstFormatter) Format(fields entries.Fields, level string, message string) string {
+	return FIRST_FORMATTER_USED
+}
+
+type SecondFormatter struct {}
+
+func (formatter SecondFormatter) Format(fields entries.Fields, level string, message string) string {
+	return SECOND_FORMATTER_USED
+}
+
+func TestShouldAllowForMultipleFormatters(t *testing.T) {
+	firstOutput := NewDumbWriter()
+	secondOutput := NewDumbWriter()
+	firstFormatter := FirstFormatter{}
+	secondFormatter := SecondFormatter{}
+	golog.SetLoggers(
+		loggers.NewLogger(firstOutput, firstFormatter),
+		loggers.NewLogger(secondOutput, secondFormatter),
+	)
+
+	golog.Debug("Test")
+
+	if len(firstOutput.messages) == 0 || firstOutput.messages[0] != FIRST_FORMATTER_USED {
+		t.Errorf("The first formatter was not used")
+	}
+
+	if len(secondOutput.messages) == 0 || secondOutput.messages[0] != SECOND_FORMATTER_USED {
+		t.Errorf("The second formatter was not used")
 	}
 }

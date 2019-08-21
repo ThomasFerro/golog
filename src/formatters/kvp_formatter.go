@@ -16,13 +16,13 @@ func formatStringMessage(key string, value interface{}) string {
 }
 
 // Format Format the log into a key-value pair message
-func (formatter KvpFormatter) Format(entry entries.Entry, level string, message string) string {
-	formattedMetadata := make([]string, len(entry.Fields())+2)
+func (formatter KvpFormatter) Format(fields entries.Fields, level string, message string) string {
+	formattedMetadata := make([]string, len(fields)+2)
 	index := 2
 
 	formattedMetadata[0] = fmt.Sprintf("level=%v", level)
 	formattedMetadata[1] = formatStringMessage("message", message)
-	for key, value := range entry.Fields() {
+	for key, value := range fields {
 		if reflect.TypeOf(value).String() == "string" {
 			formattedMetadata[index] = formatStringMessage(key, value)
 		} else {

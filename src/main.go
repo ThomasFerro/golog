@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/ThomasFerro/golog/entries"
-	"github.com/ThomasFerro/golog/formatters"
 	gologgers "github.com/ThomasFerro/golog/loggers"
 )
 
@@ -69,7 +68,6 @@ func (entry LogEntry) Error(message string) {
 
 // Fatal Log a fatal message
 func (entry LogEntry) Fatal(message string) {
-	// TODO : Passer par log.Fatal
 	entry.WriteLog("fatal", message)
 }
 
@@ -78,7 +76,7 @@ func (entry LogEntry) WriteLog(level string, message string) {
 	for _, logger := range loggers {
 		logger.Output().Write(
 			[]byte(
-				formatters.NewKvpFormatter().Format(entry, level, message),
+				logger.Formatter().Format(entry.Fields(), level, message),
 			),
 		)
 	}
