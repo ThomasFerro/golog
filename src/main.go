@@ -1,15 +1,19 @@
 package main
 
 import (
+	"github.com/ThomasFerro/golog/configurations"
 	"github.com/ThomasFerro/golog/entries"
 	gologgers "github.com/ThomasFerro/golog/loggers"
 )
 
-var loggers []gologgers.Logger
-
 // SetLoggers Set the loggers to use
 func SetLoggers(newLoggers ...gologgers.Logger) {
-	loggers = newLoggers
+	configurations.SetLoggers(newLoggers...)
+}
+
+// GetLoggers Get the used loggers
+func GetLoggers() []gologgers.Logger {
+	return configurations.GetLoggers()
 }
 
 // LogEntry Log entry
@@ -73,7 +77,7 @@ func (entry LogEntry) Fatal(message string) {
 
 // WriteLog Write the log
 func (entry LogEntry) WriteLog(level string, message string) {
-	for _, logger := range loggers {
+	for _, logger := range GetLoggers() {
 		logger.Output().Write(
 			[]byte(
 				logger.Formatter().Format(entry.Fields(), level, message),

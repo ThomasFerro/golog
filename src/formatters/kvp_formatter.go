@@ -2,7 +2,6 @@ package formatters
 
 import (
 	"fmt"
-	"reflect"
 	"strings"
 
 	"github.com/ThomasFerro/golog/entries"
@@ -23,7 +22,7 @@ func (formatter KvpFormatter) Format(fields entries.Fields, level string, messag
 	formattedMetadata[0] = fmt.Sprintf("level=%v", level)
 	formattedMetadata[1] = formatStringMessage("message", message)
 	for key, value := range fields {
-		if reflect.TypeOf(value).String() == "string" {
+		if _, typeOk := value.(string); typeOk {
 			formattedMetadata[index] = formatStringMessage(key, value)
 		} else {
 			formattedMetadata[index] = fmt.Sprintf("%v=%v", key, value)
