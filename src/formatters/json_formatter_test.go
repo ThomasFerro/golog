@@ -1,7 +1,6 @@
 package formatters_test
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 
@@ -12,7 +11,7 @@ import (
 func TestFormatTheMessage(t *testing.T) {
 	formattedMessage := formatters.NewJsonFormatter().Format(entries.Fields{}, "", "message")
 
-	if !strings.Contains(formattedMessage, "message: \"message\"") {
+	if !strings.Contains(formattedMessage, "\"message\": \"message\"") {
 		t.Errorf("The entry's message is not formatted")
 	}
 }
@@ -39,9 +38,9 @@ func TestFormatTheMetadata(t *testing.T) {
 		"otherTest": true,
 	}
 
-	fmt.Println(formattedMessage)
+	formattedMessage := formatters.NewJsonFormatter().Format(fields, "info", "message")
 
-	if !strings.Contains(formattedMessage, "test: 42.42") || !strings.Contains(formattedMessage, "otherTest: true") {
+	if !strings.Contains(formattedMessage, "\"test\": 42.42") || !strings.Contains(formattedMessage, "\"otherTest\": true") {
 		t.Errorf("The entry's metadata are not formatted")
 	}
 }

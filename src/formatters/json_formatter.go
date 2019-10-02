@@ -10,18 +10,22 @@ import (
 // JsonFormatter A JSON formatter
 type JsonFormatter struct{}
 
+func formatStringMessageAsJson(key string, value interface{}) string {
+	return fmt.Sprintf("\"%v\": \"%v\"", key, value)
+}
+
 // Format Format the log into a key-value pair message
 func (formatter JsonFormatter) Format(fields entries.Fields, level string, message string) string {
 	formattedMetadata := make([]string, len(fields)+2)
 	index := 2
 
-	formattedMetadata[0] = fmt.Sprintf("level: %v", level)
-	formattedMetadata[1] = formatStringMessage("message", message, ": ")
+	formattedMetadata[0] = formatStringMessageAsJson("level", level)
+	formattedMetadata[1] = formatStringMessageAsJson("message", message)
 	for key, value := range fields {
 		if _, typeOk := value.(string); typeOk {
-			formattedMetadata[index] = formatStringMessage(key, value, ": ")
+			formattedMetadata[index] = formatStringMessageAsJson(key, value)
 		} else {
-			formattedMetadata[index] = fmt.Sprintf("%v: %v", key, value)
+			formattedMetadata[index] = fmt.Sprintf("\"%v\": %v", key, value)
 		}
 		index++
 	}
