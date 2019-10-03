@@ -10,7 +10,7 @@ import (
 // KvpFormatter A key-value pair formatter
 type KvpFormatter struct{}
 
-func formatStringMessage(key string, value interface{}) string {
+func formatStringMessageAsKvp(key string, value interface{}) string {
 	return fmt.Sprintf("%v=\"%v\"", key, value)
 }
 
@@ -20,10 +20,10 @@ func (formatter KvpFormatter) Format(fields entries.Fields, level string, messag
 	index := 2
 
 	formattedMetadata[0] = fmt.Sprintf("level=%v", level)
-	formattedMetadata[1] = formatStringMessage("message", message)
+	formattedMetadata[1] = formatStringMessageAsKvp("message", message)
 	for key, value := range fields {
 		if _, typeOk := value.(string); typeOk {
-			formattedMetadata[index] = formatStringMessage(key, value)
+			formattedMetadata[index] = formatStringMessageAsKvp(key, value)
 		} else {
 			formattedMetadata[index] = fmt.Sprintf("%v=%v", key, value)
 		}
